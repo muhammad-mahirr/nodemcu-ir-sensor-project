@@ -2,12 +2,15 @@
 #include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>
 
-// ====== YOUR WIFI & TELEGRAM SETTINGS ======
-const char* ssid     = "<Wifi Name>";
-const char* password = "<Wifi Password>";
+// ====== WIFI & TELEGRAM SETTINGS ======
+const char* ssid     = "WIFI_NAME";
+const char* password = "WIFI_PASS";
 
-#define BOT_TOKEN    "<Bot Token>"
-#define CHAT_ID      "<Chat ID>"
+int entryCount = 0;
+unsigned long doorOpenTime = 0;
+
+#define BOT_TOKEN    "BOT_TOKEN"
+#define CHAT_ID      "BOT_CHAT_ID"
 
 // Secure client + Telegram bot
 WiFiClientSecure client;
@@ -193,6 +196,26 @@ void showCenteredMessage(String line1, String line2) {
   display.display();
 }
 
+String getUptime() {
+  unsigned long ms = millis();
+  unsigned long seconds = ms / 1000;
+  unsigned long minutes = seconds / 60;
+  unsigned long hours = minutes / 60;
+  unsigned long days = hours / 24;
+
+  seconds %= 60;
+  minutes %= 60;
+  hours %= 24;
+
+  String uptime = "";
+  if (days > 0) uptime += String(days) + "d ";
+  if (hours > 0 || days > 0) uptime += String(hours) + "h ";
+  if (minutes > 0 || hours > 0 || days > 0) uptime += String(minutes) + "m ";
+  uptime += String(seconds) + "s";
+
+  return uptime;
+}
+
 void playAnimationLoop(const byte frames[][512], int frameCount) {
   if (frameCount <= 0) return;
   while (true) {
@@ -254,7 +277,7 @@ void loop() {
   int sensorState = digitalRead(IR_SENSOR_PIN); // LOW = closed
 
   if (sensorState == LOW) {
-    // Door closed
+    // 🚪 Door closed
     digitalWrite(GREEN_LED_PIN, HIGH);
     digitalWrite(RED_LED_PIN, LOW);
     digitalWrite(BUZZER_PIN, LOW);
@@ -272,10 +295,19 @@ void loop() {
       }
     }
 
-    // Reset open state
     openStartTime = 0;
     openAnimationStarted = false;
-    telegramNotified = false; // reset so next open event sends message
+
+    if (doorOpenTime > 0) {
+      unsigned long openDuration = (millis() - doorOpenTime) / 1000; // in seconds
+      String message = "✅ Door closed.\n";
+      message += "🕒 Door was open for: " + String(openDuration) + "s";
+
+      bot.sendMessage(CHAT_ID, message, "");
+      doorOpenTime = 0;
+    }
+
+    telegramNotified = false;
 
   } else {
     // Door open
@@ -287,10 +319,16 @@ void loop() {
 
     if (!openAnimationStarted) {
       showCenteredMessage("Someone", "Enters!");
-      
-      // ✅ SEND TELEGRAM MESSAGE (once per open event)
+
+      // Telegram notification only once per open event
       if (!telegramNotified) {
-        bot.sendMessage(CHAT_ID, "🚨 Someone entered through the door!", "");
+        entryCount++;
+        doorOpenTime = millis();  // Starts timing the open duration
+
+        String message = "🚨 Someone entered through the door!\n";
+        message += "Total entries: " + String(entryCount);
+
+        bot.sendMessage(CHAT_ID, message, "");
         telegramNotified = true;
       }
 
@@ -303,10 +341,10 @@ void loop() {
       }
     }
 
-    // Reset closed state
     closedStartTime = 0;
     closedAnimationStarted = false;
   }
 
   delay(100);
 }
+
