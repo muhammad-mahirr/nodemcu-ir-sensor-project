@@ -1,3 +1,18 @@
+#include <ESP8266WiFi.h>
+#include <WiFiClientSecure.h>
+#include <UniversalTelegramBot.h>
+
+// ====== WIFI & TELEGRAM SETTINGS ======
+const char* ssid     = "WIFI_NAME";
+const char* password = "WIFI_PASSWORD";
+
+#define BOT_TOKEN    "BOT_TOKEN"
+#define CHAT_ID      "CHaT_ID"
+
+// Secure client + Telegram bot
+WiFiClientSecure client;
+UniversalTelegramBot bot(BOT_TOKEN, client);
+
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -7,7 +22,6 @@
 #define SCREEN_HEIGHT 64
 #define OLED_RESET -1
 #define OLED_ADDRESS 0x3C
-
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // Hardware pins
@@ -85,13 +99,12 @@ const byte PROGMEM openFrames[][512] = {
   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,248,0,0,0,0,0,0,1,252,0,0,0,0,0,0,3,254,0,0,0,0,0,0,7,7,0,0,0,0,0,0,6,3,128,0,0,0,0,0,14,3,128,0,0,0,0,0,14,3,128,0,0,0,0,0,14,3,128,0,0,0,0,0,6,3,128,0,0,0,0,0,7,7,0,0,0,0,0,0,3,254,0,0,0,0,0,0,1,252,0,0,0,0,0,0,0,248,0,0,0,0,0,0,0,0,0,0,0,0,0,0,15,192,0,0,0,0,0,0,63,240,0,0,0,0,0,0,127,248,0,0,0,0,0,0,240,28,0,0,0,0,0,1,224,12,0,0,0,0,0,3,192,14,0,0,0,0,0,7,128,14,0,0,0,0,0,15,0,15,0,0,0,0,0,30,24,31,0,0,0,0,0,60,56,31,128,0,0,0,0,56,240,27,128,0,0,0,0,49,240,57,192,0,0,0,0,113,240,57,248,0,0,0,0,115,224,56,126,0,0,0,0,99,224,60,31,0,0,0,0,227,224,126,7,128,0,0,0,231,224,127,3,128,0,0,0,199,192,103,227,128,0,0,1,199,192,99,255,128,0,0,1,207,192,224,127,0,0,0,1,207,192,224,6,0,0,0,0,253,192,224,0,0,0,0,0,249,192,112,0,0,0,0,0,1,224,120,0,0,0,0,0,1,240,56,0,0,0,0,0,1,248,28,0,0,0,0,0,3,188,28,0,0,0,0,0,3,158,14,0,0,0,0,0,3,143,15,0,0,0,0,0,3,143,135,0,0,0,0,0,3,143,199,0,0,0,0,0,7,13,195,0,0,0,0,0,7,29,195,0,0,0,0,0,14,28,195,0,0,0,0,0,28,56,195,128,0,0,0,0,28,56,227,128,0,0,0,0,56,112,227,128,0,0,0,0,112,96,227,128,0,0,0,0,112,224,97,128,0,0,0,0,225,192,97,128,0,0,0,0,225,192,97,128,0,0,0,0,227,128,115,128,0,0,0,0,127,0,63,128,0,0,0,0,127,0,63,0,0,0,0,0,28,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,252,0,0,0,0,0,0,3,254,0,0,0,0,0,0,7,7,0,0,0,0,0,0,6,3,0,0,0,0,0,0,14,3,128,0,0,0,0,0,14,3,128,0,0,0,0,0,14,3,128,0,0,0,0,0,14,3,128,0,0,0,0,0,7,3,0,0,0,0,0,0,3,223,0,0,0,0,0,0,3,254,0,0,0,0,0,0,0,248,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,63,240,0,0,0,0,0,0,127,248,0,0,0,0,0,0,240,28,0,0,0,0,0,1,224,28,0,0,0,0,0,7,192,14,0,0,0,0,0,15,0,15,0,0,0,0,0,30,0,15,0,0,0,0,0,60,16,31,128,0,0,0,0,120,112,31,128,0,0,0,0,112,240,25,192,0,0,0,0,97,240,24,240,0,0,0,0,227,240,56,254,0,0,0,0,199,96,60,63,128,0,0,1,199,224,62,7,192,0,0,1,206,224,127,0,192,0,0,1,142,224,119,224,192,0,0,3,140,192,115,255,192,0,0,3,157,192,96,127,192,0,0,3,29,192,224,15,128,0,0,3,57,192,224,0,0,0,0,3,241,192,224,0,0,0,0,3,241,192,112,0,0,0,0,0,129,224,120,0,0,0,0,0,3,240,56,0,0,0,0,0,3,248,28,0,0,0,0,0,3,188,14,0,0,0,0,0,3,158,14,0,0,0,0,0,3,15,7,0,0,0,0,0,3,15,131,0,0,0,0,0,7,31,195,128,0,0,0,0,7,29,227,128,0,0,0,0,14,28,225,128,0,0,0,0,28,24,225,128,0,0,0,0,56,56,97,192,0,0,0,0,56,112,97,192,0,0,0,0,112,112,113,192,0,0,0,0,224,224,112,192,0,0,0,1,225,192,112,192,0,0,0,1,195,192,48,224,0,0,0,1,131,128,56,224,0,0,0,1,135,0,56,224,0,0,0,1,206,0,61,224,0,0,0,0,254,0,31,192,0,0,0,0,124,0,15,128,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 };
-
 #define CLOSED_FRAME_COUNT (sizeof(closedFrames) / sizeof(closedFrames[0]))
 #define OPEN_FRAME_COUNT   (sizeof(openFrames) / sizeof(openFrames[0]))
 
 // ---------------- CUSTOM IMAGE ----------------
 const unsigned char PROGMEM myImage[] = {
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7f, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -155,7 +168,6 @@ const unsigned char PROGMEM myImage[] = {
 	0x00, 0x00, 0xfd, 0x74, 0xe5, 0x24, 0x07, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0xfd, 0x34, 0xfd, 0x24, 0x07, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0xd5, 0x36, 0xad, 0x24, 0x07, 0xff, 0xff, 0xff, 0xff, 0xff, 0xd0, 0x00, 0x00, 0x00
-  // full 128x64 custom image array here from image2cpp
 };
 
 // Time tracking
@@ -164,36 +176,10 @@ unsigned long openStartTime = 0;
 bool closedAnimationStarted = false;
 bool openAnimationStarted = false;
 
-void setup() {
-  Serial.begin(115200);
-  Wire.begin(D2, D1);
+// Track if message already sent
+bool telegramNotified = false;
 
-  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
-    Serial.println(F("SSD1306 allocation failed"));
-    while (true);
-  }
-
-  pinMode(IR_SENSOR_PIN, INPUT);
-  pinMode(GREEN_LED_PIN, OUTPUT);
-  pinMode(RED_LED_PIN, OUTPUT);
-  pinMode(BUZZER_PIN, OUTPUT);
-
-  digitalWrite(GREEN_LED_PIN, HIGH);
-  digitalWrite(RED_LED_PIN, LOW);
-  digitalWrite(BUZZER_PIN, LOW);
-
-  // Show custom image instead of "System Ready"
-  display.clearDisplay();
-  display.drawBitmap(
-    0, 0,           // top-left corner
-    myImage,        // image array
-    128, 64,        // width & height
-    SSD1306_WHITE   // color
-  );
-  display.display();
-  delay(1500);
-}
-
+// ================== HELPER FUNCTIONS ==================
 void showCenteredMessage(String line1, String line2) {
   display.clearDisplay();
   display.setTextSize(3);
@@ -214,30 +200,68 @@ void showCenteredMessage(String line1, String line2) {
   display.display();
 }
 
-// play animation frames from array
 void playAnimationLoop(const byte frames[][512], int frameCount) {
+  if (frameCount <= 0) return;
   while (true) {
     for (int i = 0; i < frameCount; i++) {
       int sensorState = digitalRead(IR_SENSOR_PIN);
-      // Exit condition
       if ((frames == closedFrames && sensorState == HIGH) || 
           (frames == openFrames && sensorState == LOW)) {
         return;
       }
-
       display.clearDisplay();
-      display.drawBitmap((SCREEN_WIDTH - FRAME_WIDTH) / 2, 0, frames[i], FRAME_WIDTH, FRAME_HEIGHT, 1);
+      display.drawBitmap((SCREEN_WIDTH - FRAME_WIDTH) / 2, 0, frames[i], FRAME_WIDTH, FRAME_HEIGHT, SSD1306_WHITE);
       display.display();
       delay(FRAME_DELAY);
+      yield();
     }
   }
 }
 
+// ================== SETUP ==================
+void setup() {
+  Serial.begin(115200);
+  Wire.begin(D2, D1);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    while (true);
+  }
+
+  pinMode(IR_SENSOR_PIN, INPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+
+  digitalWrite(GREEN_LED_PIN, HIGH);
+  digitalWrite(RED_LED_PIN, LOW);
+  digitalWrite(BUZZER_PIN, LOW);
+
+  // Show boot image
+  display.clearDisplay();
+  if (sizeof(myImage) > 0) {
+    display.drawBitmap(0, 0, myImage, 128, 64, SSD1306_WHITE);
+    display.display();
+    delay(1500);
+  }
+
+  // ==== CONNECT TO WIFI ====
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\n✅ WiFi connected");
+  client.setInsecure(); // disable SSL check for Telegram
+}
+
+// ================== LOOP ==================
 void loop() {
   int sensorState = digitalRead(IR_SENSOR_PIN);
 
   if (sensorState == LOW) {
-    // Door is closed
+    // Door closed
     digitalWrite(GREEN_LED_PIN, HIGH);
     digitalWrite(RED_LED_PIN, LOW);
     digitalWrite(BUZZER_PIN, LOW);
@@ -246,10 +270,7 @@ void loop() {
 
     if (!closedAnimationStarted) {
       showCenteredMessage("Door", "Closed");
-
-      if (closedStartTime == 0)
-        closedStartTime = millis();
-
+      if (closedStartTime == 0) closedStartTime = millis();
       if (millis() - closedStartTime >= 5000) {
         closedAnimationStarted = true;
         playAnimationLoop(closedFrames, CLOSED_FRAME_COUNT);
@@ -261,9 +282,10 @@ void loop() {
     // Reset open state
     openStartTime = 0;
     openAnimationStarted = false;
+    telegramNotified = false; // reset so next open event sends message
 
   } else {
-    // Door is open
+    // Door open
     digitalWrite(GREEN_LED_PIN, LOW);
     digitalWrite(RED_LED_PIN, HIGH);
     digitalWrite(BUZZER_PIN, HIGH);
@@ -272,10 +294,14 @@ void loop() {
 
     if (!openAnimationStarted) {
       showCenteredMessage("Someone", "Enters!");
+      
+      // SEND TELEGRAM MESSAGE (once per open event)
+      if (!telegramNotified) {
+        bot.sendMessage(CHAT_ID, "🚨 Someone entered through the door!", "");
+        telegramNotified = true;
+      }
 
-      if (openStartTime == 0)
-        openStartTime = millis();
-
+      if (openStartTime == 0) openStartTime = millis();
       if (millis() - openStartTime >= 5000) {
         openAnimationStarted = true;
         playAnimationLoop(openFrames, OPEN_FRAME_COUNT);
