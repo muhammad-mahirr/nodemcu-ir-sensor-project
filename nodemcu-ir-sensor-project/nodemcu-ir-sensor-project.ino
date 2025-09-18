@@ -3,11 +3,14 @@
 #include <UniversalTelegramBot.h>
 
 // ====== WIFI & TELEGRAM SETTINGS ======
-const char* ssid     = "WIFI_NAME";
-const char* password = "WIFI_PASSWORD";
+const char* ssid     = "🔥🔥🔥";
+const char* password = "ADBC_924461511";
+
+int entryCount = 0;
+unsigned long doorOpenTime = 0;
 
 #define BOT_TOKEN    "BOT_TOKEN"
-#define CHAT_ID      "CHaT_ID"
+#define CHAT_ID      "CHAT_ID"
 
 // Secure client + Telegram bot
 WiFiClientSecure client;
@@ -16,6 +19,7 @@ UniversalTelegramBot bot(BOT_TOKEN, client);
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+
 
 // OLED configuration
 #define SCREEN_WIDTH 128
@@ -200,6 +204,26 @@ void showCenteredMessage(String line1, String line2) {
   display.display();
 }
 
+String getUptime() {
+  unsigned long ms = millis();
+  unsigned long seconds = ms / 1000;
+  unsigned long minutes = seconds / 60;
+  unsigned long hours = minutes / 60;
+  unsigned long days = hours / 24;
+
+  seconds %= 60;
+  minutes %= 60;
+  hours %= 24;
+
+  String uptime = "";
+  if (days > 0) uptime += String(days) + "d ";
+  if (hours > 0 || days > 0) uptime += String(hours) + "h ";
+  if (minutes > 0 || hours > 0 || days > 0) uptime += String(minutes) + "m ";
+  uptime += String(seconds) + "s";
+
+  return uptime;
+}
+
 void playAnimationLoop(const byte frames[][512], int frameCount) {
   if (frameCount <= 0) return;
   while (true) {
@@ -282,7 +306,19 @@ void loop() {
     // Reset open state
     openStartTime = 0;
     openAnimationStarted = false;
-    telegramNotified = false; // reset so next open event sends message
+
+    // Send "door was open for..." message once
+    if (doorOpenTime > 0) {
+      unsigned long openDuration = (millis() - doorOpenTime) / 1000; // in seconds
+      String message = "✅ Door closed.\n";
+      message += "🕒 Door was open for: " + String(openDuration) + "s";
+
+      bot.sendMessage(CHAT_ID, message, "");
+      doorOpenTime = 0; // Reset after sending
+    }
+
+    // Allow next open event to notify again
+    telegramNotified = false;
 
   } else {
     // Door open
@@ -294,10 +330,16 @@ void loop() {
 
     if (!openAnimationStarted) {
       showCenteredMessage("Someone", "Enters!");
-      
-      // SEND TELEGRAM MESSAGE (once per open event)
+
+      // Telegram notification only once per open event
       if (!telegramNotified) {
-        bot.sendMessage(CHAT_ID, "🚨 Someone entered through the door!", "");
+        entryCount++;
+        doorOpenTime = millis();  // Start timing the open duration
+
+        String message = "🚨 Someone entered through the door!\n";
+        message += "Total entries: " + String(entryCount);
+
+        bot.sendMessage(CHAT_ID, message, "");
         telegramNotified = true;
       }
 
@@ -317,3 +359,4 @@ void loop() {
 
   delay(100);
 }
+
