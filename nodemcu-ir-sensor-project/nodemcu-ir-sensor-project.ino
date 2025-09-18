@@ -1,11 +1,9 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>
+#include <WiFiManager.h>
 
 // ====== WIFI & TELEGRAM SETTINGS ======
-const char* ssid     = "🔥🔥🔥";
-const char* password = "ADBC_924461511";
-
 int entryCount = 0;
 unsigned long doorOpenTime = 0;
 
@@ -19,7 +17,6 @@ UniversalTelegramBot bot(BOT_TOKEN, client);
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-
 
 // OLED configuration
 #define SCREEN_WIDTH 128
@@ -243,6 +240,7 @@ void playAnimationLoop(const byte frames[][512], int frameCount) {
 }
 
 // ================== SETUP ==================
+
 void setup() {
   Serial.begin(115200);
   Wire.begin(D2, D1);
@@ -269,20 +267,32 @@ void setup() {
     delay(1500);
   }
 
-  // ==== CONNECT TO WIFI ====
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  // ======= WiFiManager Setup =======
+  WiFiManager wm;
+
+  // Custom AP name (can be anything)
+  bool res = wm.autoConnect("NodeMCU-Setup");
+
+  if (!res) {
+    Serial.println("❌ Failed to connect or config timeout.");
+    display.clearDisplay();
+    showCenteredMessage("WiFi", "Failed!");
+    delay(3000);
+    ESP.restart();  // Retry
+  } else {
+    Serial.println("✅ Connected to WiFi: " + WiFi.SSID());
+    display.clearDisplay();
+    showCenteredMessage("WiFi", "Connected");
+    delay(1000);
   }
-  Serial.println("\n✅ WiFi connected");
-  client.setInsecure(); // disable SSL check for Telegram
+
+  client.setInsecure();  // Disable certificate verification for Telegram bot
 }
+
 
 // ================== LOOP ==================
 void loop() {
-  int sensorState = digitalRead(IR_SENSOR_PIN);
+  int sensorState = digitalRead(IR_SENSOR_PIN); // LOW = closed
 
   if (sensorState == LOW) {
     // Door closed
